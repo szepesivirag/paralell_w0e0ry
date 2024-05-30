@@ -1,0 +1,61 @@
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define NUM_THREADS 4
+#define N 3
+
+typedef struct {
+    int row;
+    int col;
+    int (*A)[N];
+    int (*B)[N];
+    int (*C)[N];
+} thread_data;
+
+void* multiply(void* arg) {
+    thread_data* data = (thread_data*)arg;
+    int sum = 0;
+    for (int k = 0; k < N; k++) {
+        sum += data->A[data->row][k] * data->B[k][data->col];
+    }
+    data->C[data->row][data->col] = sum;
+    pthread_exit(0);
+}
+
+int main() {
+    int A[N][N] = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
+    int B[N][N] = {{9, 8, 7}, {6, 5, 4}, {3, 2, 1}};
+    int C[N][N] = {0};
+
+    pthread_t threads[NUM_THREADS];
+    thread_data thread_data_array[NUM_THREADS];
+
+    int thread_count = 0;
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            thread_data_array[thread_count].row = i;
+            thread_data_array[thread_count].col = j;
+            thread_data_array[thread_count].A = A;
+            thread_data_array[thread_count].B = B;
+            thread_data_array[thread_count].C = C;
+            pthread_create(&threads[thread_count], NULL, multiply, (void*)&thread_data_array[thread_count]);
+            thread_count++;
+        }
+    }
+
+    for (int i = 0; i < thread_count; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    printf("Result matrix:\n");
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            printf("%d ", C[i][j]);
+        }
+        printf("\n");
+    }
+
+    return 0;
+}
+
